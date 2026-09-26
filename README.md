@@ -7,6 +7,8 @@ A web-based tool to generate Apple configuration profiles for encrypted DNS (DNS
 - **Encrypted DNS** - Generate profiles for DoH (DNS over HTTPS) and DoT (DNS over TLS)
 - **Popular Providers** - Pre-configured templates for Cloudflare, Google, Quad9, and AdGuard
 - **Custom DNS** - Create profiles with your own DNS server configuration
+- **Wi-Fi Exclusions** - Exclude trusted Wi-Fi networks (SSIDs) so they keep using their default DNS
+- **Domain Exclusions** - Customize which domains bypass encrypted DNS (defaults cover captive portals & carrier voicemail)
 - **S/MIME Signing** - Optionally sign profiles with your own certificate
 - **Privacy First** - All generation happens locally in your browser, no data sent to servers
 - **Multi-Platform** - Works on iOS, iPadOS, macOS, and tvOS
@@ -15,7 +17,7 @@ A web-based tool to generate Apple configuration profiles for encrypted DNS (DNS
 
 1. **Select a DNS Provider** - Choose from popular providers or enter custom DNS settings
 2. **Choose Protocol** - Select DNS over HTTPS (DoH) or DNS over TLS (DoT)
-3. **Configure Options** - Set profile name, description, and optional Wi-Fi/cellular restrictions
+3. **Configure Options** - Set profile name, identifier, and optionally exclude trusted Wi-Fi networks (SSIDs) from encrypted DNS
 4. **Optional Signing** - Add your signing certificate and private key for S/MIME signing
 5. **Download** - Click "Download Profile" to get your `.mobileconfig` file
 

@@ -4,7 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupCard } from "@/components/ui/radio-group";
+import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { InfoTooltip } from "@/components/InfoTooltip";
+import { StringListInput } from "@/components/StringListInput";
 import { ProviderSelector } from "@/components/ProviderSelector";
 import { CodePreview } from "@/components/CodePreview";
 
@@ -16,6 +18,7 @@ import { dnsProviders, type DNSProvider } from "@/lib/dns-providers";
 import {
   generateMobileConfig,
   downloadProfile,
+  DEFAULT_EXCLUDED_DOMAINS,
   type ProfileConfig,
   type CertificateConfig,
 } from "@/lib/profile-generator";
@@ -36,6 +39,12 @@ export function ProfileForm() {
   const [serverIps, setServerIps] = useState(
     dnsProviders[0].ips?.join(", ") || "",
   );
+  const [excludedSsids, setExcludedSsids] = useState<string[]>([]);
+  const [excludedDomains, setExcludedDomains] = useState<string[]>([
+    ...DEFAULT_EXCLUDED_DOMAINS,
+  ]);
+  const [excludedSsidsOpen, setExcludedSsidsOpen] = useState(false);
+  const [excludedDomainsOpen, setExcludedDomainsOpen] = useState(false);
   const [encryptedOnly, setEncryptedOnly] = useState(false);
   const [payloadScope, setPayloadScope] = useState<"System" | "User">("System");
   const [certificates] = useState<CertificateConfig[]>([]);
@@ -133,6 +142,10 @@ export function ProfileForm() {
         .split(",")
         .map((ip) => ip.trim())
         .filter(Boolean),
+      excludedSsids: excludedSsids.map((ssid) => ssid.trim()).filter(Boolean),
+      excludedDomains: excludedDomains
+        .map((domain) => domain.trim())
+        .filter(Boolean),
       encryptedOnly,
       payloadScope,
       certificates,
@@ -181,6 +194,10 @@ export function ProfileForm() {
     setDnsProtocol("HTTPS");
     setServerUrl(dnsProviders[0].dohUrl);
     setServerIps(dnsProviders[0].ips?.join(", ") || "");
+    setExcludedSsids([]);
+    setExcludedDomains([...DEFAULT_EXCLUDED_DOMAINS]);
+    setExcludedSsidsOpen(false);
+    setExcludedDomainsOpen(false);
     setEncryptedOnly(false);
     setPayloadScope("System");
 
@@ -190,6 +207,11 @@ export function ProfileForm() {
     setSignedProfile(null);
     setErrors({});
   };
+
+  const excludedSsidCount = excludedSsids.filter((ssid) => ssid.trim()).length;
+  const excludedDomainCount = excludedDomains.filter((domain) =>
+    domain.trim(),
+  ).length;
 
   return (
     <div className="space-y-8">
@@ -340,6 +362,49 @@ export function ProfileForm() {
         <div className="flex items-center gap-2">
           <Label className="text-base font-medium">Additional Options</Label>
         </div>
+
+        <CollapsibleSection
+          title="Excluded Wi-Fi Networks"
+          description="Trusted Wi-Fi networks that keep their default DNS."
+          count={excludedSsidCount}
+          open={excludedSsidsOpen}
+          onOpenChange={setExcludedSsidsOpen}
+        >
+          <StringListInput
+            values={excludedSsids}
+            onChange={setExcludedSsids}
+            placeholder="Home WiFi"
+            addLabel="Add network"
+            ariaLabel="Excluded Wi-Fi network"
+          />
+          <p className="text-xs text-muted-foreground">
+            Add each network name (SSID) exactly as it appears, including
+            capitalization. Only affects Wi-Fi &mdash; Ethernet always uses
+            encrypted DNS.
+          </p>
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Excluded Domains"
+          description="Domains that resolve via the network's default DNS."
+          count={excludedDomainCount}
+          open={excludedDomainsOpen}
+          onOpenChange={setExcludedDomainsOpen}
+        >
+          <StringListInput
+            values={excludedDomains}
+            onChange={setExcludedDomains}
+            placeholder="captive.apple.com"
+            addLabel="Add domain"
+            ariaLabel="Excluded domain"
+            inputClassName="font-mono"
+          />
+          <p className="text-xs text-muted-foreground">
+            The defaults cover Apple captive-portal detection and carrier
+            voicemail, which can break if forced through encrypted DNS. Remove
+            all to disable.
+          </p>
+        </CollapsibleSection>
 
         <div className="flex items-center gap-3">
           <Checkbox

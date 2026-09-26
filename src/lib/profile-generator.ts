@@ -3,6 +3,18 @@ export interface CertificateConfig {
   data: string; // Base64-encoded certificate data (PEM content without headers)
 }
 
+// Domains that should bypass encrypted DNS and use the network's default
+// resolver. These defaults cover Apple captive-portal detection and carrier
+// voicemail (VVM), which can break if forced through encrypted DNS.
+export const DEFAULT_EXCLUDED_DOMAINS = [
+  "captive.apple.com",
+  "dav.orange.fr",
+  "vvm.mobistar.be",
+  "vvm.mstore.msg.t-mobile.com",
+  "tma.vvm.mone.pan-net.eu",
+  "vvm.ee.co.uk",
+];
+
 export interface ProfileConfig {
   profileName: string;
   organizationName: string;
@@ -10,6 +22,8 @@ export interface ProfileConfig {
   dnsProtocol: "HTTPS" | "TLS";
   serverUrl: string;
   serverIps: string[];
+  excludedSsids: string[];
+  excludedDomains: string[];
   encryptedOnly: boolean;
   payloadScope: "System" | "User";
   certificates: CertificateConfig[];
@@ -68,6 +82,52 @@ export function generateMobileConfig(config: ProfileConfig): string {
       <key>ServerName</key>
       <string>${escapeXml(config.serverUrl)}</string>${serverAddressesXml}`;
 
+  // Exclude specific Wi-Fi networks: on a matching SSID, encrypted DNS is not
+  // applied and the device falls back to the network's default resolver. This
+  // rule must come first because OnDemandRules are first-match-wins and the
+  // EvaluateConnection rule below has no match criteria (it matches everything).
+  const ssidExclusionRule =
+    config.excludedSsids.length > 0
+      ? `
+          <dict>
+            <key>Action</key>
+            <string>Disconnect</string>
+            <key>InterfaceTypeMatch</key>
+            <string>WiFi</string>
+            <key>SSIDMatch</key>
+            <array>
+              ${config.excludedSsids
+                .map((ssid) => `<string>${escapeXml(ssid.trim())}</string>`)
+                .join("\n              ")}
+            </array>
+          </dict>`
+      : "";
+
+  // Resolve the listed domains with the network's default DNS instead of the
+  // encrypted server (NeverConnect). Omitted entirely when the list is empty,
+  // since an EvaluateConnection rule with no domains would be meaningless.
+  const excludedDomainsRule =
+    config.excludedDomains.length > 0
+      ? `
+          <dict>
+            <key>Action</key>
+            <string>EvaluateConnection</string>
+            <key>ActionParameters</key>
+            <array>
+              <dict>
+                <key>DomainAction</key>
+                <string>NeverConnect</string>
+                <key>Domains</key>
+                <array>
+                  ${config.excludedDomains
+                    .map((domain) => `<string>${escapeXml(domain.trim())}</string>`)
+                    .join("\n                  ")}
+                </array>
+              </dict>
+            </array>
+          </dict>`
+      : "";
+
   // Generate certificate payloads
   const certificatePayloads = config.certificates
     .map((cert, index) => {
@@ -118,27 +178,7 @@ export function generateMobileConfig(config: ProfileConfig): string {
         <dict>${dnsSettingsPayload}
         </dict>
         <key>OnDemandRules</key>
-        <array>
-          <dict>
-            <key>Action</key>
-            <string>EvaluateConnection</string>
-            <key>ActionParameters</key>
-            <array>
-              <dict>
-                <key>DomainAction</key>
-                <string>NeverConnect</string>
-                <key>Domains</key>
-                <array>
-                  <string>captive.apple.com</string>
-                  <string>dav.orange.fr</string>
-                  <string>vvm.mobistar.be</string>
-                  <string>vvm.mstore.msg.t-mobile.com</string>
-                  <string>tma.vvm.mone.pan-net.eu</string>
-                  <string>vvm.ee.co.uk</string>
-                </array>
-              </dict>
-            </array>
-          </dict>
+        <array>${ssidExclusionRule}${excludedDomainsRule}
           <dict>
             <key>Action</key>
             <string>Connect</string>
