@@ -6,23 +6,10 @@ import { Link } from "react-router-dom";
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
-      {/* Top Bar */}
-      <div className="bg-background">
-        <div className="bg-foreground/10 text-center py-2 px-4">
-          <a
-            href="https://upset.dev/onion-domain"
-            className="text-sm font-medium hover:underline"
-          >
-            📣 Get a custom <strong>.onion address</strong> for your Tor site
-          </a>
-        </div>
-      </div>
-
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm">
         <div className="container mx-auto flex items-center justify-between px-4 py-4">
           <Link to="https://upset.dev" className="flex items-center gap-2">
-            <div className="rounded-full w-3 h-3 bg-foreground"></div>
             <span className="text-lg font-semibold">upset.dev</span>
           </Link>
           <div className="flex items-center gap-4">
@@ -30,7 +17,7 @@ const Index = () => {
               <ThemeToggle />
             </div>
             <a
-              href="https://github.com/fransallen/dns-profile-generator"
+              href="https://github.com/upsetdev/dns-profile-generator"
               target="_blank"
               rel="noopener noreferrer"
               className="flex gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
